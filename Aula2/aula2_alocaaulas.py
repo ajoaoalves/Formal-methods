@@ -40,7 +40,7 @@ for f1 in formadores:
 for f in formadores:
     for a in aulas:
         if a <= 2:
-            s.add(Implies(x[f][a], And(Not(x[f][a+1]), Not(x[f][a+2]), Not(x[f][a+3]))))
+            s.add(Implies(x[f][a], Or(Not(x[f][a+1]), Not(x[f][a+2]), Not(x[f][a+3]))))
 
 def aux(m):
     p = []
