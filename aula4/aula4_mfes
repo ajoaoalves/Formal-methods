@@ -1,0 +1,229 @@
+sig User {
+	follows : set User,
+	sees : set Photo,
+	posts : set Photo,
+	suggested : set User
+}
+
+sig Influencer extends User {}
+
+sig Photo {
+	date : one Day
+}
+sig Ad extends Photo {}
+
+sig Day {}
+// Specify the following properties.
+// You can check their correctness with the different commands and
+// when specifying each property you can assume all the previous ones to be true.
+
+pred inv1 {
+	// Every image is posted by one user.
+  
+	// Duas restrições para captar "exactamente um"
+	// Usando os dois quantificadores standard
+	// 
+	// all y : Photo | some x : User | x -> y in posts
+ 	// all x, z : User, y : Photo | x -> y in posts and z -> y in posts implies x=z
+
+	// Ou então usamos o quantificador 'one' 
+	// 
+	// all y : Photo | one x : User | x -> y in posts
+
+	// relação usada como prefixo
+	// 
+	// all y : Photo | one x : User | x in posts.y
+
+    // Substituimos quantificador 'one' por operador 'one' sobre conjuntos
+    // -- exprime cardinalidade 1 
+    all y : Photo | one posts.y 
+
+}
+ 
+
+pred inv2 {
+	// Users cannot follow themselves.
+
+  	 //all p : User | not p -> p in follows
+
+	// ou, usando quantificador 'no' ("nenhum...") 
+	// 
+  	// no p : User | p -> p in follows
+
+	// Não é possível eliminar a variável p e
+	// substituir quantificador 'no' por operador 'no' sobre conjuntos
+	//
+  	no p : User | p in p.follows
+  
+    //all x, y: User | not(x->y in follows) and x = y
+}
+
+
+pred inv3 {
+	// Users can see ads posted by everyone, 
+	// but only see non ads posted by followed users.
+
+	// all u : User, a : Photo | u->a in sees implies a in Ad or 
+	//    some u1 : User | u1->a in posts and u->u1 in follows
+
+    // Nos 3 próximos passos substituimos quantificador 'some'
+	// por operador 'some' sobre conjuntos -- exprime conjunto não vazio.
+    // Primeiro escrevemos a relação 'posts' em notação prefixa
+	// 
+	// all u : User, a : Photo | u->a in sees implies a in Ad or 
+	//    some u1 : User | u1 in posts.a and u1 in u.follows
+  
+    // Em seguida usamos o operador '&' de intersecção de conjuntos 
+	// 
+	// all u : User, a : Photo | u->a in sees implies a in Ad or 
+	//    some u1 : User | u1 in (posts.a & u.follows)              
+  
+    // E finalmente alteramos o quantificador, o que permite
+	// eliminar a variável u1
+	// 
+	// all u : User, a : Photo | u->a in sees implies a in Ad or 
+	//    some posts.a & u.follows
+
+	// É possível quantificar sobre conjuntos, em particular obtidos
+	// utilizando relações com prefixo ou sufixo.
+	// O padrão all x : A | x in B implies P
+	// pode ser escrito como
+	// all x : A&B | P
+
+	// Passo preparatório
+	// 
+	// all u : User, a : Photo | a in u.sees implies 
+	//    a in Ad or some posts.a & u.follows
+	    
+	// Note-se que u.sees está contido em Photo, logo Photo&a.sees = a.sees
+	// 
+	// all u : User, a : u.sees | a in Ad or some posts.a & u.follows
+
+	// Simplificação adicional, usando diferença de conjuntos
+	// 
+	all u : User, a : u.sees-Ad | some posts.a & u.follows
+
+
+	// PARA MAIS TARDE
+	// 
+	// all u : User, a : u.sees | a in Ad or a in u.follows.posts
+  
+	// all u : User, a : u.sees | a in Ad + u.follows.posts         // Union
+
+	// all u : User | u.sees in Ad + u.follows.posts
+
+	// all u : User, a : u.sees-Ad | a in u.follows.posts
+
+	// all u : User | u.sees-Ad in u.follows.posts
+
+
+	// ALTERNATIVA tendo em conta inv1
+	// 
+	// all u, u1 : User, a : Photo |
+	//     u->a in sees and not a in Ad and u1->a in posts implies u->u1 in follows
+
+	// É possível escrever isto de forma mais compacta eliminanando a var. a.
+	// Começamos por isolá-la num quantificador existencial.
+	// Depois substituimo-lo pelo operador 'some' 
+
+	// all u, u1 : User |
+	//     (some a : Photo | u->a in sees and not a in Ad and u1->a in posts)
+	//      implies u->u1 in follows
+
+	// all u, u1 : User | (some u.sees&u1.posts-Ad) implies u->u1 in follows
+
+	// Podemos também obter uma versão compacta
+	// trocando a ordem das variáveis quantificadas. 
+	// 
+	// all a : Photo-Ad, u : sees.a, u1 : posts.a | u->u1 in follows
+  
+
+}
+
+
+pred inv4 {
+	// If a user posts an ad then all its posts should be labeled as ads. 
+
+    // all x : User | (some y : Photo | x->y in posts and y in Ad) 
+    //   implies (all z : Photo | x->z in posts implies z in Ad)
+  
+
+    // Introduzimos intersecção de conjuntos
+    //
+    // all x : User | (some y : Photo | y in x.posts & Ad)
+    //   implies (all z : Photo | x->z in posts implies z in Ad)
+
+    // Substituimos quantificador 'some' por operador 'some' sobre conjuntos
+    // -- exprime conjunto não vazio
+    //
+    // all x : User | (some x.posts & Ad)
+    //   implies (all z : Photo | x->z in posts implies z in Ad)
+
+    // O padrão all z | z in A implies z in B   
+    // pode ser substituído por A in B
+    // note-se que o primeiro 'in' significa 'elemento pertence a conjunto';
+    // o segundo significa 'conjunto contido em conjunto'.
+    // Fazemos isto em dois passos
+    
+    // all x : User | (some x.posts & Ad)
+    //   implies (all z : Photo | z in x.posts implies z in Ad)
+
+    // all x : User | (some x.posts & Ad) implies x.posts in Ad
+
+    // Conjuntos podem ser usados em notação prefixa/pósfixa com relações
+    // posts.Ad representa os users que postaram Ads
+    // 
+    // all x : User | x in posts.Ad implies x.posts in Ad
+ 
+    // Novamente um padrão que pode ser simplificado
+    // alterando o âmbito do quantificador
+    //
+    // all x : posts.Ad | x.posts in Ad
+}
+
+
+pred inv5 {
+	// Influencers are followed by everyone else.
+  
+  
+    all x: Influencer, y: User | y != x implies y -> x in follows
+
+}
+
+
+pred inv6 {
+	// Influencers post every day.
+  
+  //all x:Influencer, y:Day | (some z:Photo | x->z in posts and z->y in date)
+  
+  //all x:Influencer, y:Day | (some z:Photo | z in x.posts and z in date.y)
+  
+  all x:Influencer, y:Day | some x.posts & date.y
+
+
+}
+
+
+pred inv7 {
+	// Suggested are other users followed by followed users, but not yet followed.
+  
+   all x, y : User | 
+    x->y in suggested iff 
+    (some z : User | x->z in follows and z->y in follows and not (x->y in follows))
+
+	
+}
+
+pred inv8 {
+  // A user only sees ads from followed or suggested users.
+
+  //all x : User, y : Photo | x->y in sees and y in Ad implies 
+  //  (some z : User | z->y in posts and (x->z in follows or x->z in suggested))
+
+  all x : User, y : Photo | x->y in sees and y in Ad implies 
+    (some z : User | z in posts.y and (z in x.follows or z in x.suggested))
+
+
+
+
+}
