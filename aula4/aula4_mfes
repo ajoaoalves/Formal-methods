@@ -53,9 +53,9 @@ pred inv2 {
 	// Não é possível eliminar a variável p e
 	// substituir quantificador 'no' por operador 'no' sobre conjuntos
 	//
-  	no p : User | p in p.follows
+  	//no p : User | p in p.follows
   
-    //all x, y: User | not(x->y in follows) and x = y
+    all x, y: User | not(x->y in follows and x = y)
 }
 
 
@@ -209,7 +209,7 @@ pred inv7 {
   
    all x, y : User | 
     x->y in suggested iff 
-    (some z : User | x->z in follows and z->y in follows and not (x->y in follows))
+    (some z : User |  x!= y and x->z in follows and z->y in follows and not (x->y in follows))
 
 	
 }
@@ -222,7 +222,6 @@ pred inv8 {
 
   all x : User, y : Photo | x->y in sees and y in Ad implies 
     (some z : User | z in posts.y and (z in x.follows or z in x.suggested))
-
 
 
 
