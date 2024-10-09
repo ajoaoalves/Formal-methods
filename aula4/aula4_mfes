@@ -183,46 +183,98 @@ pred inv4 {
 
 
 pred inv5 {
-	// Influencers are followed by everyone else.
+    // Influencers are followed by everyone else.
   
+    // all x : User | x in Influencer implies 
+    //   all y : User | x!=y implies y->x in follows
   
-    all x: Influencer, y: User | y != x implies y -> x in follows
+    // all x : Influencer, y : User | x!=y implies y->x in follows
+  
+    // all x : Influencer, y : User | x!=y implies y in follows.x
+  
+    all x : Influencer | follows.x  = User-x         
 
+    // all disj x, y : User | x in Influencer implies x in y.follows
+   
+    // all x, y : User | x in Influencer-y implies x in y.follows
+   
+    all y : User | Influencer-y in y.follows
 }
 
 
 pred inv6 {
-	// Influencers post every day.
+     // Influencers post every day.
   
-  //all x:Influencer, y:Day | (some z:Photo | x->z in posts and z->y in date)
+     // all x : User | x in Influencer implies 
+     //    all d : Day | some z : Photo | x->z in posts and z->d in date
   
-  //all x:Influencer, y:Day | (some z:Photo | z in x.posts and z in date.y)
-  
-  all x:Influencer, y:Day | some x.posts & date.y
+     // all x : Influencer, d : Day |
+     //    some z : Photo | z in x.posts and z in date.d
+ 
+     // all x : Influencer, d : Day |
+     //    some z : Photo | z in x.posts & date.d
+ 
+     all x : Influencer, d : Day | some x.posts & date.d
+ 
+     // all x : Influencer, d : Day | x in posts.date.d
+ 
+     all d : Day | Influencer in posts.date.d
 
+     // WRONG!!
+     //Influencer in posts.date.Day
+
+     //all x : Influencer, d : Day | d in x.posts.date
+ 
+     all x : Influencer | Day in x.posts.date
+
+     // WRONG!!
+     // Day in Influencer.posts.date
 
 }
+
 
 
 pred inv7 {
-	// Suggested are other users followed by followed users, but not yet followed.
-  
-   all x, y : User | 
-    x->y in suggested iff 
-    (some z : User |  x!= y and x->z in follows and z->y in follows and not (x->y in follows))
-
+     // Suggested are other users followed by followed users, but not yet followed.
 	
+     // all x, y : User | x->y in suggested iff x!=y and
+     //   some z : User | x->z in follows and z->y in follows and x->y not in follows
+
+     // all x, y : User | y in x.suggested iff x!=y and 
+     //   some z : User | z in x.follows and y in z.follows and y not in x.follows
+
+     // all x, y : User | y in x.suggested iff x!=y and 
+     //   y in x.follows.follows and y not in x.follows
+
+     //  all x, y : User | y in x.suggested iff x!=y and 
+     //   y in x.follows.follows - x.follows
+
+     //  all x, y : User | y in x.suggested iff 
+     //     y in x.follows.follows - x.follows - x
+
+     all x : User | x.suggested = x.follows.follows - x.follows - x
 }
 
+
 pred inv8 {
-  // A user only sees ads from followed or suggested users.
+     // A user only sees ads from followed or suggested users.
+  
+     // all x : User, y : Photo | x->y in sees and y in Ad implies 
+     //  (all z : User | z->y in posts implies x->z in follows or x->z in suggested)
 
-  //all x : User, y : Photo | x->y in sees and y in Ad implies 
-  //  (some z : User | z->y in posts and (x->z in follows or x->z in suggested))
+     // all x : User, y : Photo | y in x.sees & Ad implies 
+     //  (all z : User | z in posts.y implies z in x.follows + x.suggested)
 
-  all x : User, y : Photo | x->y in sees and y in Ad implies 
-    (some z : User | z in posts.y and (z in x.follows or z in x.suggested))
+     // all x : User, y : x.sees & Ad | posts.y in (x.follows + x.suggested)
 
+     // all x : User, y : x.sees & Ad | posts.y in x.(follows + suggested)
 
+     // all x : User, y : x.sees & Ad | y in x.(follows+suggested).posts
 
+     all x : User | x.sees & Ad in x.(follows+suggested).posts
+
+     all a : Ad, x : sees.a | posts.a in x.(follows+suggested)
+
+     // WRONG
+     // all a : Ad | posts.a in sees.a.(follows+suggested)
 }
