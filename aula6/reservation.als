@@ -1,10 +1,3 @@
-/*
-
-Finish the specification of this reservation concept,
-including its events, scenarios, and operational principles.
-
-*/ 
-
 
 
 sig Resource {}
@@ -14,8 +7,6 @@ sig User {
 }
 
 var sig Available in Resource {}
-
-
 
 
 // Clauses in a predicate are interpreted as conjuncts
@@ -107,26 +98,39 @@ run Example {
 
 run Scenario1 {
 	// An user reserves a resource, uses it, and finally a cleanup occurs
+	some u:User,r:Resource {
+		reserve[u,r];use[u,r];cleanup
+	}
 
 } expect 1
 
 run Scenario2 {
 	// An user reserves a resource, cancels the reservation, and reserves again
+	some u:User,r:Resource {
+		reserve[u,r];cancel[u,r];reserve[u,r]
+	}
 
 } expect 1
 
 run Scenario3 {
 	// An user reserves two resources, cancels one, uses the other, and finally a cleanup occurs
+	some u:User,r1:Resource,r2:Resource {
+		reserve[u,r1];reserve[u,r2];cancel[u,r1];use[u,r2];cleanup
+	}
 
 } expect 1
 
 run Scenario4 {
 	// Two users try to reserve the same resource
+	some u1:User,u2:User,r:Resource {
+		reserve[u1,r];reserve[u2,r]
+	}
 
 } expect 0
 
 run Scenario5 {
 	// Eventually a cleanup is performed twice in a row
+  eventually (cleanup;cleanup)
 
 } expect 0
 
@@ -135,25 +139,42 @@ run Scenario5 {
 check OP1 {
 	// Reserved resources aren't available
 
+	all r : Resource, u:User | always (u->r in reservations implies r not in Available)
+}
+
+check OP1b {
+	// Reserved are reserved by at most one user
+
+	always (all r:Resource | lone reservations.r)
 }
 
 check OP2 {
 	// Used resources were reserved before
+	all u : User, r : Resource | always (use[u,r] implies once r in u.reservations)
+	
 
 }
 
 check OP3 {
 	// Used resources can only be reserved again after a cleanup
+		all u1,u2 : User, r : Resource | always ( .. implies ( ... releases not ...))
 
 }
 
 check OP4 {
 	// After a cleanup all unreserved resources are available
+	always (cleanup implies after  
+		all r:Resource | r in Available iff all u:User | r not in u.reservations)
 
 }
 
 check OP5 {
 	// Cancel undoes reserve
+  
+  all u:User, r : Resource |
+  	always ((reserve[u,r];cancel[u,r])
+      implies 
+      Available'' = Available and reservations'' = reservations)
 
 }
 
