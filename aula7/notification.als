@@ -140,12 +140,6 @@ pred unsubscribe [u : User, e : Event] {
 
 }
 
- 
-
- 
-
- 
-
 pred occur [e : Event] {
 
                 // Occurrence of an event
@@ -161,12 +155,6 @@ pred occur [e : Event] {
                 subscriptions' = subscriptions
 
 }
-
- 
-
- 
-
- 
 
 fact {
 
@@ -204,33 +192,10 @@ fact {
 
 }
 
- 
 
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
-// Validation
-
- 
+// Validation 
 
 run Example {}
-
- 
 
 run Scenario1 {
 
@@ -244,12 +209,6 @@ run Scenario1 {
 
 } expect 1
 
- 
-
- 
-
- 
-
 run Scenario2 {
 
                 // An event is subscribed, unsubscribed, and then occurs
@@ -261,12 +220,6 @@ run Scenario2 {
                 }
 
 } expect 1
-
- 
-
- 
-
- 
 
 run Scenario3 {
 
@@ -280,12 +233,6 @@ run Scenario3 {
 
 } expect 1
 
- 
-
- 
-
- 
-
 run Scenario4 {
 
                 // An user subscribes two events, then both occur, then unsubscribes one of them, and finally reads the notifications
@@ -296,13 +243,7 @@ run Scenario4 {
 
                 }
 
-} expect 1
-
- 
-
- 
-
- 
+} expect 1 
 
 run Scenario5 {
 
@@ -315,12 +256,6 @@ run Scenario5 {
                 }
 
 } expect 0
-
- 
-
- 
-
- 
 
 run Scenario6 {
 
@@ -338,6 +273,7 @@ run Scenario6 {
 
 check OP1 {
 	// Users can only have notifications of subscribed events
+	
 
 }
 
