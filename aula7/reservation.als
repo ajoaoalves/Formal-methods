@@ -180,27 +180,30 @@ check OP5 {
 
 check OP6 {
 	// If a cleanup occurs some resource was used before
-	always( cleanup implies (some u:User, r:Resource | once reserve[u,r]))
+	//always( cleanup implies (some u:User, r:Resource | once reserve[u,r]))
+
+	always(cleanup implies once (some u : User, r:Resource | use[u,r]))
 
 }
 
 check OP7 {
 	// Used resources were not canceled since being reserved
-	all u: User, r: Resource |
-   		always (use[u, r] implies (r in reservations[u]))
+	//all u: User, r: Resource | always (use[u, r] implies (r in reservations[u]))
+	//all u: User, r: Resource |	always (use[u, r] implies once reserve[u,r])
+	all u: User, r: Resource |	always (use[u, r] implies (not cancel[u,r] since reserve[u,r]))
 
 }
 
 check OP8 {
 	// Reserved resources can be used while not used or canceled
-	all u1:User, u2: User, r: Resource |
-   		always (use[u1, r] implies (not (use[u2,r] and cancel[u2,r])))
+	//all u1:User, u2: User, r: Resource | always (use[u1, r] implies (not (use[u2,r] and cancel[u2,r])))
+	all u:User,r:Resource | always (reserve[u,r] implies after ((use[u,r] or cancel[u,r]) releases r in u.reservations))
 
 }
 
 check OP9 {
   // The first event to occur will be a reservation
-  //all u:User, r:Resource | always (reserve[u,r] implies after (use[u,r] or cancel[u,r] or cleanup))
+  always stutter or (stutter until (some u:User,r:Resource | reserve[u,r]))
 
 
 }
@@ -208,4 +211,6 @@ check OP9 {
 
 check OP10 {
     // Se não ocorrerem limpezas nem cancelamentos, os recursos disponíveis diminuem
+	always(not cleanup and all u : User,r:Resource | not cancel[u,r]) implies always (Available' in Available)
+	
 }
