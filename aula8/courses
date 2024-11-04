@@ -1,0 +1,178 @@
+
+
+
+module Courses
+
+  use int.Int
+  use int.Abs
+
+  type person
+  predicate isProfessor (person) (*Subtipos especificos por isso não são tipos*)
+  predicate isStudent (person) 
+  type course
+  type project
+  type grade = int
+
+ 
+  predicate teaches (person) (course)
+  predicate enrolled (person) (course)
+  
+  (* WhyML does not allow overloaded symbols *)
+  (* proposes and worksOn are the two 'projects' relations in the Alloy model *)
+  predicate proposes (course) (project)                    
+  predicate worksOn (person) (project)
+  
+  predicate grades (course) (person) (grade)
+
+
+  (* WRITE EACH OF THE FOLLOWING AXIOMS: 
+   *)	
+
+  (* Only students can be enrolled in courses enrolled p c : a pessoa p está inscrita no curso c*)
+  axiom axm1 : forall p : person, c:course. enrolled p c -> isStudent p 
+
+  (* Only professors can teach courses *)
+  axiom axm2 : forall p:person, c:course. teaches p c -> isProfessor p
+
+  (* Courses must have teachers *)
+  axiom axm3 : forall c:course. exists p : person. teaches p c 
+  
+  (* Projects are proposed by one course --- - Aqui uma condição diz "pelo menos um" e a outra diz
+  "se houver dois então sao iguais" de forma a junção dos dois ser 1 *)
+  axiom axm4a : forall pr:project. exists c:course. proposes c pr
+  axiom axm4b : forall c1 c2: course, pr:project. 
+    proposes c1 pr /\ proposes c2 pr -> c1 = c2
+
+  (* Only students work on projects, and projects must have someone working on them *)
+
+  axiom axm5a : forall pr:project, p:person. worksOn p pr -> isStudent p
+  axiom axm5b : forall pr:project. exists p:person. worksOn p pr
+
+  (* Students only work on projects of courses they are enrolled in *)
+  
+  axiom axm6 : forall pr:project, c : course, p : person. 
+
+  (* Students work on at most one project per course *)
+
+  axiom axm7 : 
+
+  (* Professors cannot teach themselves *)
+
+  axiom axm8 : forall p:person. not teaches p p
+
+  (* A professor cannot teach colleagues *)
+
+  axiom axm9 : 
+
+  (* Only students have grades *)
+
+  axiom axm10 : 
+
+  (* Students only have grades in courses in which they are enrolled *)
+
+  axiom axm11 : forall p : person, c:course. 
+
+  (* Students have at most one grade per course *)
+
+  axiom axm12 : forall p: person, c:course, g1 g2:grade.
+        isStudent p /\ grades c p g1 /\ grades c p g2 -> g1=g2
+
+
+  (* A student with the highest mark in a course must have worked on a project on that course *)
+  (* Let us use defined predicates to structure the axiom AQUI DENTRO DE PARENTESIS NAO POSSO TER STUDENT PORQUE NÃO É UM TIPO*)
+
+  predicate hasHighest (c:course) (p:person) = 
+      forall g g1 :grade, p1:person.
+        grades c p g /\ isStudent p1 /\ grades c p1 g1 -> g >= g1
+  
+
+  predicate worksOnProject (c:course) (p:person) = 
+      exists pr : project. proposes c pr /\ worksOn p pr
+
+  axiom axm13 : forall p :person, c :course.
+                  isStudent p /\ hasHighest c p -> worksOnProject c p
+		       
+
+  (* A student cannot work with the same colleague in different projects *)
+
+  axiom axm14 : forall p1 p2 : person, pr1 pr2 : project.
+                    isStudent p1 /\ isStudent p2 /\ 
+                worksOn p1 pr1 /\ worksOn p1 pr2 /\ worksOn p2 pr1 /\ works p2 pr2 ->
+                pr1 = pr2
+
+  (* Students working on the same project in a course cannot have marks differing by more than one unit *)
+
+  axiom axm15 : forall c : course, p1 p2 : person, pr : projects, g1 g2 : grade.
+    isStudent p1 /\ isStudent p2 /\ 
+        proposes c pr /\ worksOn p1 pr /\ worksOn p2 pr /\
+            grades c p1 g1 /\ grades c p2 g2 -> 
+                abs(g1-g2) <= 1
+
+
+
+  (* NOW MODEL THE FOLLOWING SCENARIO, BY WRITING ADDITIONAL AXIOMS:  
+     - MFES is a course
+     - All MFES students already have grades
+     - proj1 is the (only) project proposed in MFES
+     - John and Lisa are two students enrolled in MFES 
+     - John and Lisa both worked on proj1 
+   *)
+
+  constant mfes : course
+  
+  axiom mfes_all_graded : 
+      forall x:person. isStudent x /\ enrolled x mfes -> exists n:grade. grades mfes x n
+
+  constant proj1 : project
+  
+  axiom proj1MFES : proposes mfes proj1
+  axiom proj1Unique : forall p:project. proposes mfes p -> p = proj1
+
+  constant john : person
+  constant lisa : person
+  axiom lisaNotJohn : lisa <> john
+  axiom johnStudent : isStudent john (*Para criar uma inconsistencia podia meter que o john nao era estudante e 
+  estava inscrito a MFES o que obrigamos em cima*)
+  axiom lisaStudent : isStudent lisa
+  
+  axiom johnMFES : enrolled john mfes
+  axiom lisaMFES : enrolled lisa mfes
+  
+  axiom johnProj1 : worksOn john proj1
+  axiom lisaProj1 : worksOn lisa proj1
+
+
+  (* FINALLY, WRITE APPROPRIATE GOALS OR LEMMAS TO SHOW THAT: 
+     - the above theory is not inconsistent 
+     - there exists at least one project with two students working on it
+     - each project proposed by MFES has at least two students working on it
+     - Lisa has a grade in some course 
+     - John and Lisa's grades do not differ by more than one unit 
+  *)   
+
+
+  (* Invalid -- theory is consistent *)
+  goal inconsistency : false (* se conseguimos provar falso temos pelo menos dois modelos que foram provados entre si*)
+
+  goal oneProjectTwoStudents : 
+      exists p :project, x1 x2 : person.
+        isStudent x1 /\ worksOn x1 p /\ isStudent x2 /\ worksOn x2 p /\ x1 <> x2
+
+  goal allProjectsTwoStudents :
+      forall p:project. proposes mfes p -> 
+          exists x1 x2: person. isStudent x1 /\ worksOn x1 p /\ isStudent x2 /\ worksOn x2 p /\ x1 <> x2
+
+
+  lemma lisaGrade : exists c : course, n : grade. grades c lisa n
+
+  goal lisaJohnGradesMFES : forall x y :grade.
+            grades mfes lisa y /\ grades mfes john x -> y-1 <= x <= y+1
+
+(*DIFERENÇA ENTRE GOALS E LEMAS: Os goals não entram para o contexto, o lema entra para contexto/fica na teoria. 
+O lema é um passo intermedio para a minha prova.
+A razão para nao meter tudo como lema é que o contexto lógico e assim trabalha com uma teoria grande que é mais complexa de provar
+se eu metesse o inconsistency como lema, as coisas seguintes entram para contexto se ainda nao tivesse sido provado. 
+Só metemos a lema se temos a certeza que as coisas estão bem feitas*)
+
+
+end
