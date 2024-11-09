@@ -48,13 +48,13 @@ module Courses
   axiom axm5a : forall pr:project, p:person. worksOn p pr -> isStudent p
   axiom axm5b : forall pr:project. exists p:person. worksOn p pr
 
-  (* Students only work on projects of courses they are enrolled in *)
+ (* Students only work on projects of courses they are enrolled in *)
   
-  axiom axm6 : forall pr:project, c : course, p : person. 
+  axiom axm6 : forall pr:project, p : person. worksOn p pr -> (exists c : course. enrolled p c /\ proposes c pr)
 
   (* Students work on at most one project per course *)
 
-  axiom axm7 : 
+  axiom axm7 : forall pr1 pr2: project, p:person, c:course. proposes c pr1 /\ proposes c pr2 /\ worksOn p pr1 /\ worksOn p pr2 -> pr1 = pr2
 
   (* Professors cannot teach themselves *)
 
@@ -62,15 +62,15 @@ module Courses
 
   (* A professor cannot teach colleagues *)
 
-  axiom axm9 : 
+  axiom axm9 : forall p1 p2 : person. isProfessor p1 /\ isProfessor p2 /\ not teaches p1 p2
 
   (* Only students have grades *)
 
-  axiom axm10 : 
+  axiom axm10 : forall p : person, c : course, g:grade. grades c p g -> isStudent p 
 
   (* Students only have grades in courses in which they are enrolled *)
 
-  axiom axm11 : forall p : person, c:course. 
+  axiom axm11 : forall p : person, c:course, g:grade. grades c p g -> enrolled p c 
 
   (* Students have at most one grade per course *)
 
