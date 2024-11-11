@@ -62,7 +62,7 @@ module Courses
 
   (* A professor cannot teach colleagues *)
 
-  axiom axm9 : forall p1 p2 : person. isProfessor p1 /\ isProfessor p2 /\ not teaches p1 p2
+  axiom axm9 : forall p1 p2 : person, c : course. isProfessor p1 /\ isProfessor p2 /\ teaches p1 c /\ teaches p2 c /\ not teaches p1 p2
 
   (* Only students have grades *)
 
