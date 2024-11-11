@@ -15,6 +15,8 @@ module ListFunctions
  	Then prove the function's correctness w.r.t. it. 
    *)
   let rec function delete (x:int) (l:list int) : list int 
+  ensures {num_occ x result = 0}  (*Se x estiver na lista l*)
+  ensures {forall y:int. y <> x -> num_occ y result = num_occ y l}  (*Se x não estiver na lista l*)
   = match l with
     | Nil -> Nil
     | Cons h t -> if h=x then delete x t
@@ -26,8 +28,21 @@ module ListFunctions
   (* 2. The following function calculates the finite set of elements
      	in a list (the 'add' function is the union with a singleton set).
     	Write a contract and prove the function's correctness. 
+    	
+    	Ou seja, a lista contém os elementos 1, 2, 2, 3, 1 — ou seja, o número 1
+    	e o número 2 aparecem duas vezes na lista, e o número 3 aparece uma vez.
+    	A  função elements deve retornar um conjunto contendo apenas os elementos
+    	únicos da lista, ou seja, 1, 2 e 3. Em termos de uma estrutura de conjunto (fset),
+    	o resultado será: result = {1, 2, 3}
+    	
+    	Equivalente: Todo o que está na lista também está no resultado
+    	e se está no resultado também está na lista
+    	
+    	Implicação: Se está na lista também está no resultado
    *)
+   
   let rec ghost function elements (l:list int) : fset int
+  ensures { forall x :int. mem x result <-> num_occ x l > 0}
   = match l with
     | Nil -> empty
     | Cons h t -> add h (elements t)
@@ -42,14 +57,46 @@ module ListFunctions
 	Modify the function's body and contract accordingly, and 
 	prove the correctness of the new version.
    *)
-  let rec function deleteOne (x: int) (l:list int) : list int =
-
-
+  let rec function deleteOne (x: int) (l:list int) : list int 
+  requires { forall y:int. num_occ y l <= 1 }
+  ensures { num_occ x result = 0 }
+  ensures {forall y:int. y<>x -> num_occ y result = num_occ y l}
+  variant { length l} (*Como não há recursividade num dos casos é necessário
+  colocar que indica que t tem um cumprimento menor que a lista l*)
+  = match l with
+      | Nil -> Nil
+      | Cons h t -> if h=x then t
+                    else Cons h (deleteOne x t)
+      end
+      
+    (*Versão para diferentes versoes do why3 *)   
+   let rec function deleteOne_tryWhy (x:int) (l:list int) : list int  
+       requires{ forall y : int. num_occ y l <= 1 }
+       ensures { num_occ x result = 0 }
+       ensures {forall y:int. y<>x -> num_occ y result = num_occ y l}
+       variant { length l} 
+      = match l with
+      | Nil -> Nil
+      | Cons h t -> assert {forall y:int. y<>h -> num_occ y t = num_occ y l };
+                    assert {forall y:int. num_occ y t <= 1};
+                    if h=x then t 
+                    else let t' = deleteOne x t in Cons h t'
+      end
 
   (* 4. Include in the contract of deleteOne a postcondition relating
      	'elements result' and 'elements l'.
    *)
-
+   
+  let rec function deleteOne2 (x: int) (l:list int) : list int 
+    requires { forall y:int. num_occ y l <= 1 }
+    ensures { num_occ x result = 0 }
+    ensures {forall y:int. y<>x -> num_occ y result = num_occ y l}
+    ensures {elements result = remove x (elements l)}
+    = match l with
+      | Nil -> Nil
+      | Cons h t -> if h=x then t
+                    else Cons h (deleteOne x t)
+      end
 
 
 end 
