@@ -1,0 +1,55 @@
+
+
+module ListFunctions
+
+  use int.Int
+  use list.List
+  use list.Length
+  use list.NumOcc
+  use set.Fset
+
+
+  (* 1. Using the num_occ function that gives the number of occurrences  
+     	of an element in a list, specify the behaviour of the 
+	following delete function by writing its contract. 
+ 	Then prove the function's correctness w.r.t. it. 
+   *)
+  let rec function delete (x:int) (l:list int) : list int 
+  = match l with
+    | Nil -> Nil
+    | Cons h t -> if h=x then delete x t
+    	     	  else Cons h (delete x t)
+    end
+
+
+
+  (* 2. The following function calculates the finite set of elements
+     	in a list (the 'add' function is the union with a singleton set).
+    	Write a contract and prove the function's correctness. 
+   *)
+  let rec ghost function elements (l:list int) : fset int
+  = match l with
+    | Nil -> empty
+    | Cons h t -> add h (elements t)
+    end
+
+                     
+
+  (* 3. Going back to the 'delete' function, suppose that the list l
+     	does not contain repeated elements. Then the function can be
+     	optimized: when x is found there is no need to continue the
+     	list traversal.
+	Modify the function's body and contract accordingly, and 
+	prove the correctness of the new version.
+   *)
+  let rec function deleteOne (x: int) (l:list int) : list int =
+
+
+
+  (* 4. Include in the contract of deleteOne a postcondition relating
+     	'elements result' and 'elements l'.
+   *)
+
+
+
+end 
