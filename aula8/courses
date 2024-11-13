@@ -58,11 +58,11 @@ module Courses
 
   (* Professors cannot teach themselves *)
 
-  axiom axm8 : forall p:person. not teaches p p
+  axiom axm8 : forall p:person, c:course. teaches p c -> not enrolled p c
 
   (* A professor cannot teach colleagues *)
 
-  axiom axm9 : forall p1 p2 : person, c : course. isProfessor p1 /\ isProfessor p2 /\ teaches p1 c /\ teaches p2 c /\ not teaches p1 p2
+  axiom axm9 :forall p p1 :person, c c1 :course. isProfessor p /\ isProfessor p1 /\ teaches p c /\ teaches p1 c -> not (teaches p c1 /\ enrolled p1 c1)  
 
   (* Only students have grades *)
 
