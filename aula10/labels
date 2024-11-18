@@ -1,0 +1,277 @@
+
+
+(*
+  1. Convert the Alloy specification to an abstract specification 
+     in WhyML, completing the definition (code and contracts) 
+     of the 'ghost' functions in the Label_Spec module.
+*)   
+
+
+module Label_Spec
+
+  use int.Int
+  
+(*
+sig Item {
+    var labels : set Label
+}
+sig Label {}
+*)
+
+  type item = int
+  type labl = int
+  type pair = (item, labl)
+  
+  use set.Fset	
+
+  type stateT = { mutable ghost labels : fset pair }
+
+  val state : stateT
+
+
+
+(*
+pred affix [i : Item, l : Label] {
+	l not in i.labels
+	labels' = labels + i->l
+}
+*)
+
+  let ghost affix (i:item) (l:labl)
+    requires { not mem (i,l) state.labels }
+    (* HIPOTESE 1*)
+    ensures  { state.labels = add(i,l) (old state.labels)}  (*BASTAVA ESTA *)
+    (* HIPOTESE 2*)
+    ensures { Fset.mem(i,l) state.labels }
+    ensures { forall x:item, y:labl. Fset.mem (x,y) (old state.labels) -> Fset.mem(x,y) state.labels }
+    ensures {forall x:item, y:labl. Fset.mem (x,y) state.labels -> Fset.mem(x,y) (old state).labels \/ (x = i /\ y = l) }
+    (*HIPOTESE 3*)
+    ensures {forall x:item, y:labl. Fset.mem (x,y) state.labels <-> Fset.mem(x,y) (old state).labels \/ (x = i /\ y = l) }
+
+  = 
+    state.labels <- add (i,l) state.labels
+
+
+
+(*
+pred detach [i : Item, l : Label] {
+	l in i.labels
+	labels' = labels - i->l
+}
+*)
+
+  let ghost detach (i:item) (l:labl)
+    requires { mem(i,l) state.labels }
+    ensures  { state.labels = remove(i,l) (old state.labels) } 
+  = 
+    state.labels <- remove (i,l) state.labels
+
+
+
+(*
+pred clear [i : Item] {
+	some i.labels
+	labels' = labels - i->Label
+}
+*)
+
+  (* helper function
+   *)
+  val function excludePairs (i:item) (s:fset pair) : fset pair
+    ensures { forall p :pair. let (x,_) = p in mem p result <-> mem p s /\ x<>i }
+
+
+  let ghost clear (i:item)
+    requires { exists l:label. mem(i,l) state.labels }
+    ensures  { forall j:item, l:label. mem(j,l) state.labels <-> mem(j,l) (old state.labels) /\ j <> i } 
+  = 
+    state.labels <- filter state.labels(fun p -> let(x,_) = p in x <>i)
+      
+end
+
+
+
+(*
+  2. Implement the concept using lists of pairs 
+     without repetitions.
+     The specification and implementation invariants
+     have already been written below.  
+     You may want to use the provided helper functions.
+     
+ *)   
+
+module Label_list
+
+  use int.Int
+  use list.List
+  use list.Mem
+  use list.Elements
+  use list.NumOcc
+  use set.Fset	
+
+  type item = int
+  type labl = int
+  type pair = (item, labl)
+
+
+  type stateT = { mutable labels_ : list pair ; 
+       	      	  mutable ghost labels : fset pair }
+
+    (* Refinement correspondence
+     *)
+    invariant { forall p :pair. Mem.mem p labels_ <-> mem p labels }
+
+    (* Implementation invariant: 
+       lists do not contain repeated pairs
+     *)
+    invariant { forall p :pair. num_occ p labels_ <= 1 }
+
+    by { labels_ = Nil; labels = empty }
+
+
+  val state : stateT
+
+
+
+
+
+  let affix (i:item) (l:labl)
+    requires { true }
+  = 
+    ()
+
+
+
+  (* helper function
+   *)
+  val function deleteOne (x: pair) (l:list pair) : list pair 
+    requires { num_occ x l = 1 }
+    ensures  { num_occ x result = 0 }
+    ensures  { forall p :pair. p<>x -> num_occ p result = num_occ p l }
+
+
+  let detach (i:item) (l:labl)
+    requires { true }
+  = 
+    ()
+
+
+
+  (* helper function.
+     Contract must be completed! 
+   *)
+  let rec function deleteItem (i:item) (l:list pair) : list pair =
+    ensures  { true }
+  match l with
+  | Nil -> Nil
+  | Cons h t -> let t' = deleteItem i t in
+    	     	let (x,_) = h in
+                if x=i then t' else Cons h t' 
+  end
+  
+
+
+  (* helper function
+   *)
+  val function excludePairs (i:item) (s:fset pair) : fset pair
+    ensures { forall p :pair. let (x,_) = p in mem p result <-> mem p s /\ x<>i }
+
+
+  let clear (i:item)
+    requires { true }
+  = 
+    ()
+
+
+end
+
+
+
+
+(* 3. Consider a second implementation, where a list of labels
+      (without repetitions) is associated to each item through a map.
+      (i) Complete the record type definition by adding appropriate type
+      invariants.  
+      (ii) Observe the definition of 'affix'; 
+      then define the 'detach' and 'clear' functions 
+      Note that having an entry in a map with an empty list corresponds
+      at the abstract level to not having that key in the domain.
+ *)
+
+
+module Label_map
+
+  use int.Int
+  use list.List
+  use list.Mem
+  use list.NumOcc
+
+  type item = int
+  type labl = int
+  type pair = (item, labl)
+
+
+  clone fmap.MapApp with type key = item
+
+  use set.Fset	
+
+
+  type stateT = { mutable labels_ : MapApp.t (list labl) ; 
+       	      	  mutable ghost labels : fset pair }
+
+    invariant { true }
+
+    invariant { true }
+
+
+    by { labels_ = create() ; labels = empty }
+
+  val state : stateT
+
+
+
+
+
+  let affix (i:item) (l:labl)
+    requires { not mem (i,l) state.labels }
+  =
+    (* This [optional] assert shows that, as expected, there is no need for
+       implementation-level preconditions *)
+    assert { MapApp.mem i state.labels_ -> not Mem.mem l (find i state.labels_) } ; 	
+    if not (MapApp.mem i state.labels_)
+    then state.labels_ <- MapApp.add i Nil state.labels_ ;
+    let updlabls = Cons l (find i state.labels_) in 
+    state.labels_ <- MapApp.add i updlabls state.labels_ ;
+    state.labels  <- Fset.add (i,l) state.labels
+
+
+
+  (* helper function
+   *)
+  val function deleteOne (x:labl) (l:list labl) : list labl 
+    requires { num_occ x l = 1 }
+    ensures  { num_occ x result = 0 }
+    ensures  { forall y :labl. y<>x -> num_occ y result = num_occ y l }
+
+
+
+  let detach (i:item) (l:labl)
+    requires { true }
+  = 
+    ()
+
+
+
+  (* helper function
+   *)
+  val function excludePairs (i:item) (s:fset pair) : fset pair
+    ensures { forall p :pair. let (x,_) = p in mem p result <-> mem p s /\ x<>i }
+
+
+  let clear (i:item)
+    requires { true }
+  = 
+    ()
+
+
+end
