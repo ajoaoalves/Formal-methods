@@ -86,9 +86,8 @@ pred clear [i : Item] {
     ensures  { forall j:item, l:label. mem(j,l) state.labels <-> mem(j,l) (old state.labels) /\ j <> i } 
   = 
     state.labels <- filter state.labels(fun p -> let(x,_) = p in x <>i)
-      
+    (* state.labels <- excludePairs i state.labels *)  
 end
-
 
 
 (*
@@ -119,6 +118,9 @@ module Label_list
 
     (* Refinement correspondence
      *)
+     
+    invariant { labels = elements labels_ }
+
     invariant { forall p :pair. Mem.mem p labels_ <-> mem p labels }
 
     (* Implementation invariant: 
@@ -132,13 +134,13 @@ module Label_list
   val state : stateT
 
 
-
-
-
   let affix (i:item) (l:labl)
-    requires { true }
+    requires { not mem (labels(i,l)) labels }
+    ensures { state.labels_ = add(labels(i,l)) old (state.labels_) }
+    
   = 
-    ()
+    state.labels_ <- Cons (i,l) state.labels_;
+    state.labels <- add(i,l) state.labels
 
 
 
@@ -148,12 +150,14 @@ module Label_list
     requires { num_occ x l = 1 }
     ensures  { num_occ x result = 0 }
     ensures  { forall p :pair. p<>x -> num_occ p result = num_occ p l }
-
+    
 
   let detach (i:item) (l:labl)
-    requires { true }
+    requires { mem (i,l) state.labels }
+
   = 
-    ()
+    state.labels_ <- remove ((i,l) state.labels_
+    state.labels <- remove ((i,l) state.labels
 
 
 
