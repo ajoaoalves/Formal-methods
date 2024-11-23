@@ -62,7 +62,7 @@ module ListFunctions
   ensures { num_occ x result = 0 }
   ensures {forall y:int. y<>x -> num_occ y result = num_occ y l}
   variant { length l} (*Como não há recursividade num dos casos é necessário
-  colocar que indica que t tem um cumprimento menor que a lista l*)
+  colocar que indica que t tem um comprimento menor que a lista l*)
   = match l with
       | Nil -> Nil
       | Cons h t -> if h=x then t
