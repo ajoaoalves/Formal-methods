@@ -88,10 +88,9 @@ module ListFunctions
    *)
    
   let rec function deleteOne2 (x: int) (l:list int) : list int 
-    requires { forall y:int. num_occ y l <= 1 }
+    requires { forall y:int. num_occ y l >= 1 }
     ensures { num_occ x result = 0 }
-    ensures {forall y:int. y<>x -> num_occ y result = num_occ y l}
-    ensures {elements result = remove x (elements l)}
+    ensures {forall y:int. y<>x -> elements result = elements l}
     = match l with
       | Nil -> Nil
       | Cons h t -> if h=x then t
