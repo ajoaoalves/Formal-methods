@@ -263,10 +263,13 @@ module Label_map
 
 
   let detach (i:item) (l:labl)
-    requires { true }
+    requires { mem(i,l) state.albels }
   = 
-    ()
-
+    let updlabls = deleteOne l (find i state.labels_) in
+    state.labels_ <- MapApp.add i updlabls state.labels_ ;
+    (* if is_nil (find i state.labels_) *)
+    (* then state.labels_ <- MapApp-remove i state.labels_; *)
+    state.labels <- Fset.remove(i,l) state.labels
 
 
   (* helper function
@@ -276,9 +279,10 @@ module Label_map
 
 
   let clear (i:item)
-    requires { true }
+    requires { exists l:labl. mem (i,l) state.labels }
   = 
-    ()
+    state.labels_ <- MapApp.remove i state.labels_;
+    state.labels <- excludePairs i state.labels
 
 
 end
