@@ -1,0 +1,204 @@
+
+
+module Reservation_spec
+
+    use int.Int
+    use set.Fset
+
+    type resource 
+    type user
+    type pair = (user,resource)
+        
+
+    type stateT = { ghost resources : fset resource ;
+      	      	    mutable ghost available : fset resource ;
+      	      	    mutable ghost reservations : fset pair }
+
+    invariant  { forall r :resource. mem r available -> mem r resources }
+
+    invariant  { forall r :resource.
+            (exists u :user. mem (u,r) reservations) -> mem r resources }
+
+    invariant  { forall u :user, r :resource. (* mem r resources -> *)
+                   mem (u,r) reservations -> not mem r available }
+
+    invariant  { forall u1 u2 :user, r :resource. (* mem r resources -> *)
+                   mem (u1,r) reservations /\ mem (u2,r) reservations -> u1=u2 }
+
+    by { resources = empty ; available = empty ; reservations = empty }
+
+    val state : stateT
+
+
+
+    let ghost reserve (u:user) (r:resource) 
+      requires { mem r state.available }
+      ensures  { state.available = remove r (old state.available) }
+      ensures  { state.reservations = add (u,r) (old state.reservations) }
+    =	
+      state.available <- remove r state.available ;
+      state.reservations <- add (u,r) state.reservations
+
+
+    let ghost cancel (u:user) (r:resource) 
+      requires { mem (u,r) state.reservations }
+      ensures  { state.available = add r (old state.available) }
+      ensures  { state.reservations = remove (u,r) (old state.reservations) }
+    =
+      state.available <- add r state.available ;
+      state.reservations <- remove (u,r) state.reservations
+
+
+    let ghost uses (u:user) (r:resource) 
+      requires { mem (u,r) state.reservations }
+      ensures  { state.available = old state.available }
+      ensures  { state.reservations = remove (u,r) (old state.reservations) }
+    =
+      state.reservations <- remove (u,r) state.reservations
+
+
+    function filterRsr (s:fset resource) (sp:fset pair) : fset resource =
+      filter s (fun r -> forall u :user. not mem (u,r) sp)
+
+    let ghost cleanup ()
+      requires { exists r :resource. mem r state.resources /\
+                   not mem r state.available /\
+                   forall u :user. not mem (u,r) state.reservations }
+      ensures  { forall r :resource. mem r state.available <->
+                   mem r state.resources /\ forall u :user. not mem (u,r) state.reservations }
+      ensures  { state.reservations = old state.reservations }
+    =
+      state.available <- filterRsr state.resources state.reservations
+
+end
+
+
+
+
+
+
+module Reservation_spec_used
+
+    use int.Int
+    use set.Fset
+    
+    type resource 
+    type user
+    type pair = (user,resource)
+        
+
+    type stateT = { ghost resources : fset resource ;
+      	      	    mutable ghost available : fset resource ;
+      	      	    mutable ghost used : fset resource ;
+      	      	    mutable ghost reservations : fset pair }
+
+ 
+      invariant  { forall r :resource. mem r available -> mem r resources }
+
+      invariant  { forall r :resource.
+              (exists u :user. mem (u,r) reservations) -> mem r resources }
+
+      invariant  { forall u :user, r :resource. mem r resources ->
+                     mem (u,r) reservations -> not mem r available }
+
+      invariant  { forall u1 u2 :user, r :resource. mem r resources ->
+                     mem (u1,r) reservations /\ mem (u2,r) reservations -> u1=u2 }
+
+      invariant  { forall r :resource. mem r used <->
+                     mem r resources /\
+		     not (exists u :user. mem (u,r) reservations) /\
+		     not mem r available }
+
+    by { resources = empty ; available = empty ; used = empty ; reservations = empty }
+
+
+  val state : stateT
+
+  
+  
+    let ghost reserve (u:user) (r:resource) 
+      requires { mem r state.available }
+      ensures  { state.available = remove r (old state.available) }
+      ensures  { state.reservations = add (u,r) (old state.reservations) }
+      ensures  { state.used = old state.used }
+    =	
+      state.available <- remove r state.available ;
+      state.reservations <- add (u,r) state.reservations
+
+
+    let ghost cancel (u:user) (r:resource) 
+      requires { mem (u,r) state.reservations }
+      ensures  { state.available = add r (old state.available) }
+      ensures  { state.reservations = remove (u,r) (old state.reservations) }
+      ensures  { state.used = old state.used }
+    =
+      state.available <- add r state.available ;
+      state.reservations <- remove (u,r) state.reservations
+
+
+    let ghost uses (u:user) (r:resource) 
+      requires { mem (u,r) state.reservations }
+      ensures  { state.available = old state.available }
+      ensures  { state.reservations = remove (u,r) (old state.reservations) }
+      ensures  { state.used = add r (old state.used) }
+    =
+      state.reservations <- remove (u,r) state.reservations ; 
+      state.used <- add r state.used 
+
+
+    let ghost cleanup ()
+      requires { exists r :resource. mem r state.resources /\
+                   not mem r state.available /\
+                   forall u :user.not mem (u,r) state.reservations }
+      ensures  { forall r :resource. mem r state.available <->
+                   mem r state.resources /\ forall u :user. not mem (u,r) state.reservations }
+      ensures  { state.reservations = old state.reservations }
+      ensures  { state.used = empty }
+    =
+      state.available <- union state.available state.used ;
+      state.used <- empty
+
+
+end
+
+
+
+
+
+module Reservation_impl
+
+  use int.Int
+  use set.Fset
+  use list.List
+  use list.Mem
+  use list.Length
+  use list.Elements
+  use list.NumOcc
+  use list.Append
+
+  type resource 
+  type user
+  type pair = (user, resource)
+
+  val (=) (x y : resource) : bool
+    ensures { result <-> x = y }
+
+
+  clone fmap.MapApp with type key = resource
+  type  mapRU = MapApp.t user
+
+  type stateT = { ghost resources : fset resource ;
+      	      	  mutable available_ : list resource ;
+       	      	  mutable used_ : list resource ;
+       	      	  mutable reservations_ : mapRU ;
+		  mutable ghost available : fset resource ;
+      	      	  mutable ghost used : fset resource ;
+       	      	  mutable ghost reservations : fset pair }
+
+
+
+  val state : stateT
+
+
+
+end
