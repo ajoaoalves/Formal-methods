@@ -136,7 +136,7 @@ module Label_list
 
   let affix (i:item) (l:labl)
     requires { not mem (labels(i,l)) labels }
-    ensures { state.labels_ = add(labels(i,l)) old (state.labels_) }
+    (* ensures { state.labels_ = add(labels(i,l)) old (state.labels_) } *)
     
   = 
     state.labels_ <- Cons (i,l) state.labels_;
@@ -223,17 +223,13 @@ module Label_map
   type stateT = { mutable labels_ : MapApp.t (list labl) ; 
        	      	  mutable ghost labels : fset pair }
 
-    invariant { true }
+    invariant { forall i : item, l:labl. Fset.mem(i,l) labels <-> MapApp.mem i labels_ /\ Mem.mem l (labels_ i) }
 
-    invariant { true }
-
+    invariant { forall i : item, l:labl. MapApp.mem i labels_ -> num_occ l (labels_ i) <= 1 }
 
     by { labels_ = create() ; labels = empty }
 
   val state : stateT
-
-
-
 
 
   let affix (i:item) (l:labl)
@@ -256,6 +252,13 @@ module Label_map
     requires { num_occ x l = 1 }
     ensures  { num_occ x result = 0 }
     ensures  { forall y :labl. y<>x -> num_occ y result = num_occ y l }
+    variant {l}
+    
+	match l with 
+	| Nil -> absurd
+	| Cons h t -> if h = x then t
+		      else Cons h (deleteOne x t)
+	
 
 
 
