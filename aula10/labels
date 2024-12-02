@@ -225,7 +225,7 @@ module Label_map
 
     invariant { forall i : item, l:labl. Fset.mem(i,l) labels <-> MapApp.mem i labels_ /\ Mem.mem l (labels_ i) }
 
-    invariant { forall i : item, l:labl. MapApp.mem i labels_ -> num_occ l (labels_ i) <= 1 }
+    invariant { forall i : item, l:labl. MapApp.mem i labels_ -> num_occ l (labels_ i) >= 1 }
 
     by { labels_ = create() ; labels = empty }
 
