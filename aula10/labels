@@ -268,7 +268,7 @@ module Label_map
     let updlabls = deleteOne l (find i state.labels_) in
     state.labels_ <- MapApp.add i updlabls state.labels_ ;
     (* if is_nil (find i state.labels_) *)
-    (* then state.labels_ <- MapApp-remove i state.labels_; *)
+    (* then state.labels_ <- MapApp.remove i state.labels_; *)
     state.labels <- Fset.remove(i,l) state.labels
 
 
