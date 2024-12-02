@@ -263,7 +263,7 @@ module Label_map
 
 
   let detach (i:item) (l:labl)
-    requires { mem(i,l) state.albels }
+    requires { mem(i,l) state.labels }
   = 
     let updlabls = deleteOne l (find i state.labels_) in
     state.labels_ <- MapApp.add i updlabls state.labels_ ;
