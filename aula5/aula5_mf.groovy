@@ -76,10 +76,6 @@ pred inv4 {
 pred inv5 {
 	// Only students work on projects
 	
-	all p : Person | (some pr : Project | p->pr in projects) implies p in Student 
-
-	// ALTERNATIVELY (and more compact) :
-
 	all pr : Project | (Person <: projects).pr in Student
 
 
