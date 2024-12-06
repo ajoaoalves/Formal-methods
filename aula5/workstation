@@ -1,0 +1,107 @@
+sig Workstation {
+	workers : set Worker,
+	succ : set Workstation
+}
+one sig begin, end in Workstation {}
+
+sig Worker {}
+sig Human, Robot extends Worker {}
+
+abstract sig Product {
+	parts : set Product	
+}
+
+sig Material extends Product {}
+
+sig Component extends Product {
+	workstation : set Workstation
+}
+
+sig Dangerous in Product {}
+// Specify the following properties.
+// You can check their correctness with the different commands and
+// when specifying each property you can assume all the previous ones to be true.
+
+pred inv1 {
+	// Workers are either human or robots
+      all w : Worker | w in Human or w in Robot
+	
+}
+
+
+pred inv2 {
+	// Every workstation has workers and every worker works in one workstation
+  
+  all wo : Workstation | (some w : Worker | wo-> w in workers )
+
+  all w : Worker | (one wo : Workstation | wo -> w in workers)
+
+}
+
+
+pred inv3 {
+	// Every component is assembled in one workstation
+  
+  all c : Component | (one wo : Workstation | c -> wo in workstation)
+
+}
+
+
+pred inv4 {
+	// Components must have parts and materials have no parts
+  
+    all c : Component | some c.parts
+  all m : Material | no m.parts
+
+}
+
+
+pred inv5 {
+	// Humans and robots cannot work together
+  
+  all r:Robot, h:Human, w:Workstation | w -> r in workers implies w->h not in workers
+
+}
+
+
+pred inv6 {
+	// Components cannot be their own parts
+    all c : Component | c not in c.^(parts)
+}
+
+
+pred inv7 {
+	// Components built of dangerous parts are also dangerous
+  
+  all c : Component, p : Product | c->p in parts and p in Dangerous implies c in Dangerous
+
+}
+
+
+pred inv8 {
+	// Dangerous components cannot be assembled by humans
+     all d : Dangerous, wo : Workstation, h : Human | 
+        d in workstation.wo implies h not in wo.workers
+
+}
+
+
+pred inv9 {
+    // The workstations form a single line between begin and end
+  
+      // Todas as workstations são descendentes da primeira
+      all w : Workstation | w in begin.*succ
+  
+      // Todas as workstations exceto a última tem exatamente uma a seguir
+      all w : Workstation - end | one w.succ
+  
+      // A última workstation não tem nenhuma a seguir
+      no end.succ
+
+}
+
+
+pred inv10 {
+	// The parts of a component must be assembled before it in the production line
+	all c : Component, p : c.parts & Component | c.workstation in p.workstation.^succ
+}
